@@ -101,14 +101,22 @@ docker logs emqtt-master -f --tail 1m
 - And then, add new nodes:
 
 ```
-docker run --rm -ti --name emqtt-node1 -p18083:18083 -p 1883:1883 -p 4369:4369 -p 6000-6100:6000-6100  \
+docker run --rm -ti --name emqtt-node1 --hostname emqtt-node1 --dns 10.200.1.1 --net mqtt \
     -e EMQ_LOADED_PLUGINS="emq_recon,emq_modules,emq_retainer,emq_dashboard" \
     -e EMQ_NAME="emqtt" \
-    -e EMQ_HOST="emqtt-node1.ironshared.com" \
+    -e EMQ_HOST="emqtt-node1.ironshared.com"
     -e EMQ_LISTENER__TCP__EXTERNAL=1883 \
     -e EMQ_JOIN_CLUSTER="emqtt@emqtt-master.ironshared.com" \
-    emq:latest
+    emqtt-docker:latest
 ```
 
 - If you want to review more info by yourself, check this: https://github.com/emqtt/emq-docker and this: https://github.com/emqtt/emqttd/wiki to see more detailed info. 
+
+
+UPDATING: RESULTS FAILED: 
+...
+['2018-05-16T16:16:52Z']:emqttd try join emqtt@emqtt-master.ironshared.com
+Failed to join the cluster: {node_down,'emqtt@emqtt-master.ironshared.com'}
+...
+
 
