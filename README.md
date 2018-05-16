@@ -108,16 +108,25 @@ docker logs emqtt-master -f --tail 1m
 - And then, add new nodes:
 
 ```
-docker run --rm -ti --name emqtt-node1 --hostname emqtt-node1 --dns 10.200.1.1 --net mqtt \
+docker run -d --rm -ti --name emqtt-node1 --hostname emqtt-node1 --dns 10.200.1.1 --net mqtt \
     -e EMQ_LOADED_PLUGINS="emq_recon,emq_modules,emq_retainer,emq_dashboard" \
-    -e EMQ_NAME="emqtt" \
-    -e EMQ_HOST="emqtt-node1.ironshared.com"
+    -e EMQ_NAME="emqtt" -e EMQ_HOST="10.168.80.3" \
     -e EMQ_LISTENER__TCP__EXTERNAL=1883 \
-    -e EMQ_JOIN_CLUSTER="emqtt@emqtt-master.ironshared.com" \
+    -e EMQ_JOIN_CLUSTER="emqtt@10.168.80.2" \
     emqtt-docker:latest
 ```
 
 - If you want to review more info by yourself, check this: https://github.com/emqtt/emq-docker and this: https://github.com/emqtt/emqttd/wiki to see more detailed info. 
+
+- If we look at logs: 
+
+```
+['2018-05-16T16:27:34Z']:emqttd try join emqtt@10.168.80.2
+Join the cluster successfully.
+Cluster status: [{running_nodes,['emqtt@10.168.80.2','emqtt@10.168.80.3']}]
+```
+
+If we try to use names, it fails:
 
 
 UPDATING: RESULTS FAILED: 
