@@ -83,13 +83,13 @@ emqtt-docker        latest              e2a06bebb484        8 minutes ago       
 
 ## Start your emqtt cluster
 
-- We need three nodes: emqtt-master, emqtt-node1, emqtt-node2. These nodes are configured in the haproxy.cfg as backend servers for the network traffic received to ports 1883, 18083. 
+- We need three nodes: emqtt-master, emqtt-node1, emqtt-node2. These nodes are configured in the haproxy.cfg as backend servers for the network traffic received to ports 1883, 18083. Those ports will be accessed through haproxy so we dont need to map them when launching our emqtt-master.
 
 - So we need to create our cluster now. Start the cluster by creating first the emqtt-master node. 
 
 ```
 docker run --rm -ti -d --name emqtt-master --hostname emqtt-master --dns 10.200.1.1 --net mqtt \
--p 18083:18083 -p 1883:1883 -p 4369:4369 -p 6000-6100:6000-6100 \ 
+-p 4369:4369 -p 6000-6100:6000-6100 \ 
 -e EMQ_LOADED_PLUGINS="emq_recon,emq_modules,emq_retainer,emq_dashboard" \
 -e EMQ_CLUSTER__AUTOHEAL="on" -e EMQ_CLUSTER__AUTOCLEAN="1m" \ 
 -e EMQ_CLUSTER__ETCD__NODE_TTL="1m" \ 
@@ -126,8 +126,7 @@ docker logs emqtt-node1 -f --tail 1m
 docker run -d --rm -ti --name emqtt-node2 --hostname emqtt-node2 --dns 10.200.1.1 --net mqtt \
 -e EMQ_LOADED_PLUGINS="emq_recon,emq_modules,emq_retainer,emq_dashboard" \
 -e EMQ_NAME="emqtt" -e EMQ_HOST="10.168.80.4" \
--e EMQ_LISTENER__TCP__EXTERNAL=1883 -e EMQ_JOIN_CLUSTER="emqtt@10.168.80.2" emqtt-docker:latest \
-
+-e EMQ_LISTENER__TCP__EXTERNAL=1883 -e EMQ_JOIN_CLUSTER="emqtt@10.168.80.2" emqtt-docker:latest 
 ```
 
 - See logs: 
