@@ -48,6 +48,7 @@ docker network create --subnet "10.168.80.0/24" mqtt
 
 - Using this configuration: https://github.com/rainisto/haproxy-emqtt we will generate the docker image.
 - This image expose the following ports: 80 443 1883 and 18083. If you dont need any of them, comment it before generate the new image. 
+- Change the balance for TCP port 1883 from balance to leastconn.
 
 ```
 mkdir -p /opt/mqtt/haproxy \ 
@@ -61,6 +62,12 @@ cd /opt/mqtt/haproxy/haproxy-emqtt && docker build -t haproxy-mqtt . \
 => docker image ls | grep haproxy-mqtt
 haproxy-mqtt        latest              e348b9fd1d2d        12 minutes ago      69.3 MB
 ```
+### Run your HAproxy
+
+```
+docker run --rm -it -d --net mqtt -p80:80 -p1883:1883 -p18083:18083 --name haproxy01 haproxy-mqtt:latest
+```
+- It will fail as we dont have our mqtt brokers active. 
 
 ## Generate image for eMQTT Server
 
@@ -145,6 +152,13 @@ Join the cluster successfully.
 Cluster status: [{running_nodes,['emqtt@10.168.80.2','emqtt@10.168.80.3']}]
 ```
 
+### Start Haproxy
+
+```
+docker run --rm -it -d --net mqtt -p80:80 -p1883:1883 -p18083:18083 --name haproxy01 haproxy-mqtt:latest
+```
+
 - Success!
+
 
 
