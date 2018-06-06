@@ -1,0 +1,83 @@
+version: '3'
+services:
+  redismaster1:
+    image: redis:4.0.9
+    ports:
+      - "7000:7000"
+    volumes:
+      - ./docker-data/redis-cluster1.tmpl:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      mqtt:
+        ipv4_address: 10.168.80.101
+  redismaster2:
+    image: redis:4.0.9
+    ports:
+      - "7001:7001"
+    volumes:
+      - ./docker-data/redis-cluster2.tmpl:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      mqtt:
+        ipv4_address: 10.168.80.102
+  redismaster3:
+    image: redis:4.0.9
+    ports:
+      - "7002:7002"
+    volumes:
+      - ./docker-data/redis-cluster3.tmpl:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      mqtt:
+        ipv4_address: 10.168.80.103
+  redislave1:
+    image: redis:4.0.9
+    ports:
+      - "7003:7003"
+    volumes:
+      - ./docker-data/redis-cluster4.tmpl:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      mqtt:
+        ipv4_address: 10.168.80.104
+  redislave2:
+    image: redis:4.0.9
+    ports:
+      - "7004:7004"
+    volumes:
+      - ./docker-data/redis-cluster5.tmpl:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      mqtt:
+        ipv4_address: 10.168.80.105
+  redislave3:
+    image: redis:4.0.9
+    ports:
+      - "7005:7005"
+    volumes:
+      - ./docker-data/redis-cluster6.tmpl:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      mqtt:
+        ipv4_address: 10.168.80.106
+  redis-cluster:
+    tty: true
+    build:
+      context: .
+      args:
+        redis_version: '4.0.9'
+    hostname: server
+    depends_on:
+      - redismaster1
+      - redismaster2
+      - redismaster3
+      - redislave1
+      - redislave2
+      - redislave3
+    networks:
+      mqtt:
+        ipv4_address: 10.168.80.100
+networks:
+  mqtt:
+    external:
+      name: mqtt
