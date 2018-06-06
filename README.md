@@ -160,5 +160,20 @@ docker run --rm -it -d --net mqtt -p80:80 -p1883:1883 -p18083:18083 --name hapro
 
 - Success!
 
+## Redis-Cluster
+
+### 3 masters and 3 slaves
+- Minimum masters to start a redis-cluster: 3 
+- Failover: 1 master - 1 slave so the slots in the failed master will be in the slave and this slave will be promoted in case that his master enters in failed status. 
+
+### Create your cluster
+
+- Based on: https://github.com/cpapidas/docker-compose-redis-cluster
+
+### Create the cluster using your mqtt network
+
+- We will create a cluster with 3 master using our mqtt network so our haproxy will be used as frontend for the cluster and will ask for the current master and detect failed redis nodes.
+- Configruation of redis: 
+
 
 
