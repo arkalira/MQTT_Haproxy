@@ -1,12 +1,15 @@
 ## Testing Redis-cluster
 
 
-- If you want to test i suggest the following: 
+- If you want to test your redis-cluster i suggest the following: 
+
+- Stop one master
 
 ```
 docker stop rediscluster_redismaster1_1
 ```
-- See if one of the slaves turns green, it should!
+
+- See if one of the slaves turns green in the haproxy stats panel. It should!
 
 - Then check logs of the new promoted master: 
 
@@ -39,7 +42,7 @@ docker logs rediscluster_redislave3_1 -f --tail 1m
 
 ```
 
-- And the logs of an existing master should look like: 
+- And the logs of an existing master would be like: 
 
 ```
 1:M 06 Jun 09:42:04.257 # Failover auth denied to 9d045197be1d6a431c38f4369ce16a69d197842f: its master is up
@@ -50,7 +53,7 @@ docker logs rediscluster_redislave3_1 -f --tail 1m
 
 ```
 
-- All is working like a charm. 
+- If you see this status, all is working like a charm. 
 
 - Now, revert to its original state:
 
@@ -60,11 +63,13 @@ docker logs rediscluster_redislave3_1 -f --tail 1m
  
 - Get a coffee! :)
 
+## Set and get operations
+
 ### Use a smart client to set, get operations
 
-- Now we need to insert values in the new cluster. We need a smart client that will be able to understand MOVE and other commands used by cluster ops. 
+- Now we need to insert values in the new cluster. We need a smart client that will be able to understand MOVE and other commands used by the redis cluster ops. 
 
-### Set a simple client that inserts simple keys
+### Set a simple client to insert simple keys
 
 ```
 python
@@ -78,10 +83,9 @@ print(rdb.get("foo"))
 print(rdb.get("foo1"))
 print(rdb.get("foo2"))
 ``` 
+- Setting keys with **rdb.set** must return "True" and **rdb.get** should return the key value. 
 
-- Setting keys with **rdb.set** must return True and rdb.get should return the key value. 
-
-- Free the chaos monkey, stop a master, enter the cli and search for key values: 
+- Now is time to free the chaos monkey. Stop a master, enter the cli and search for key values: 
 
 ```
 docker stop rediscluster_redismaster2_1
@@ -110,7 +114,7 @@ b011850b7b258f60e2c0cac91373b859dd3adec6 10.168.80.105:7004@17004 slave 73c5a1d2
 127.0.0.1:6379>
 ```
 
-- Ok, redis-cli give us where is the slot but doesnt give us the value. We need to do it with our smart client now. 
+- Ok, redis-cli give us where is the slot but doesnt give us the value. We need to do it with the smart client now. 
 
 ```
 python
@@ -136,13 +140,13 @@ True
 True
 ```
 
-- Now start the master: 
+- Now start the master and wait for the logs: 
 
 ```
 docker start rediscluster_redismaster2_1 && docker logs rediscluster_redismaster2_1 -f --tail 1m
 ```
 
-- Focus in this part: 
+- Special focus on this part: 
 
 ```
 ...
@@ -199,7 +203,7 @@ b011850b7b258f60e2c0cac91373b859dd3adec6 10.168.80.105:7004@17004 slave 73c5a1d2
 
 ```
 
-- And start again the stoped node. It will enter as slave of its master (472363a3cf79a3c955d534e6e042f0c81349d2b5). 
+- And start again the stoped node. This time, the node will join as a slave of his master (472363a3cf79a3c955d534e6e042f0c81349d2b5). 
 
 ```
 127.0.0.1:6379> cluster nodes
@@ -213,7 +217,7 @@ b011850b7b258f60e2c0cac91373b859dd3adec6 10.168.80.105:7004@17004 slave 73c5a1d2
 
 - OK! 
 
-- Check that keys are returning as expected: 
+- Check that the value of the keys are returning as expected: 
 
 ```
 python
@@ -239,5 +243,5 @@ bar4
 bar5
 ```
 
-- Get a coffee!! 
+- Great! Get a coffee!! 
 
