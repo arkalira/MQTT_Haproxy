@@ -162,9 +162,10 @@ docker run --rm -it -d --net mqtt -p80:80 -p1883:1883 -p18083:18083 --name hapro
 
 ## Redis-Cluster
 
-### 3 masters and 3 slaves
-- Minimum masters to start a redis-cluster: 3 
-- Failover: 1 master - 1 slave so the slots in the failed master will be in the slave and this slave will be promoted in case that his master enters in failed status. 
+### Nodes: 3 masters and 3 slaves
+
+- Minimum master nodes to start a redis-cluster: 3 
+- Failover: 1 master - 1 slave so the slots in the failed master will be in the slave and this slave will be promoted automatically. 
 
 ### Create your cluster
 
@@ -173,7 +174,239 @@ docker run --rm -it -d --net mqtt -p80:80 -p1883:1883 -p18083:18083 --name hapro
 ### Create the cluster using your mqtt network
 
 - We will create a cluster with 3 master using our mqtt network so our haproxy will be used as frontend for the cluster and will ask for the current master and detect failed redis nodes.
-- Configruation of redis: 
+
+#### Compose it!
+
+- After cloning this repo go to: "redis-cluster" folder and launch it with the following command: 
+
+```
+docker-compose up --build -d
+```
+
+- This will create the needed images and deploy the cluster. When its done, check logs of the redis_cluster_redis_cluster_1 container: 
+
+```
+docker logs $(docker ps -a | grep rediscluster_redis-cluster_1 | cut -d " " -f 1)
+```
+
+- And should give results like these lines: 
+
+```
+>>> Creating cluster
+>>> Performing hash slots allocation on 6 nodes...
+Using 3 masters:
+10.168.80.101:7000
+10.168.80.102:7001
+10.168.80.103:7002
+Adding replica 10.168.80.105:7004 to 10.168.80.101:7000
+Adding replica 10.168.80.106:7005 to 10.168.80.102:7001
+Adding replica 10.168.80.104:7003 to 10.168.80.103:7002
+M: 73c5a1d20b75a692b723840acce320527b236d42 10.168.80.101:7000
+   slots:0-5460 (5461 slots) master
+M: 472363a3cf79a3c955d534e6e042f0c81349d2b5 10.168.80.102:7001
+   slots:5461-10922 (5462 slots) master
+M: bbeb14b902c9ec504ebad5940df9957b25d87092 10.168.80.103:7002
+   slots:10923-16383 (5461 slots) master
+S: 81d82b5c82aafae9842f282458c13fbaa38ea8e8 10.168.80.104:7003
+   replicates bbeb14b902c9ec504ebad5940df9957b25d87092
+S: b011850b7b258f60e2c0cac91373b859dd3adec6 10.168.80.105:7004
+   replicates 73c5a1d20b75a692b723840acce320527b236d42
+S: 9d045197be1d6a431c38f4369ce16a69d197842f 10.168.80.106:7005
+   replicates 472363a3cf79a3c955d534e6e042f0c81349d2b5
+Can I set the above configuration? (type 'yes' to accept): >>> Nodes configuration updated
+>>> Assign a different config epoch to each node
+>>> Sending CLUSTER MEET messages to join the cluster
+Waiting for the cluster to join.....
+>>> Performing Cluster Check (using node 10.168.80.101:7000)
+M: 73c5a1d20b75a692b723840acce320527b236d42 10.168.80.101:7000
+   slots:0-5460 (5461 slots) master
+   1 additional replica(s)
+M: 472363a3cf79a3c955d534e6e042f0c81349d2b5 10.168.80.102:7001
+   slots:5461-10922 (5462 slots) master
+   1 additional replica(s)
+S: b011850b7b258f60e2c0cac91373b859dd3adec6 10.168.80.105:7004
+   slots: (0 slots) slave
+   replicates 73c5a1d20b75a692b723840acce320527b236d42
+S: 81d82b5c82aafae9842f282458c13fbaa38ea8e8 10.168.80.104:7003
+   slots: (0 slots) slave
+   replicates bbeb14b902c9ec504ebad5940df9957b25d87092
+M: bbeb14b902c9ec504ebad5940df9957b25d87092 10.168.80.103:7002
+   slots:10923-16383 (5461 slots) master
+   1 additional replica(s)
+S: 9d045197be1d6a431c38f4369ce16a69d197842f 10.168.80.106:7005
+   slots: (0 slots) slave
+   replicates 472363a3cf79a3c955d534e6e042f0c81349d2b5
+[OK] All nodes agree about slots configuration.
+>>> Check for open slots...
+>>> Check slots coverage...
+[OK] All 16384 slots covered.
+DONE
+```
+
+- Sooo, we have our new cluster with 6 containers. Lets see if redis-cli tell us the same information: 
+
+- In your server do the following install: 
+
+```
+apt install redis-tools python-pip -y 
+pip install redis-py-cluster
+```
+
+#### Check cluster status using redis-cli: 
+
+- Enter this:
+```
+redis-cli -h 10.168.80.101 -p 7000
+```
+- And this in the redis cli: 
+
+10.168.80.101:7000> 
+
+```
+cluster nodes
+```
+
+ - That should give us the following output: 
+ 
+ ```
+ 10.168.80.101:7000> cluster nodes
+472363a3cf79a3c955d534e6e042f0c81349d2b5 10.168.80.102:7001@17001 master - 0 1528275082000 2 connected 5461-10922
+b011850b7b258f60e2c0cac91373b859dd3adec6 10.168.80.105:7004@17004 slave 73c5a1d20b75a692b723840acce320527b236d42 0 1528275083413 5 connected
+73c5a1d20b75a692b723840acce320527b236d42 10.168.80.101:7000@17000 myself,master - 0 1528275082000 1 connected 0-5460
+81d82b5c82aafae9842f282458c13fbaa38ea8e8 10.168.80.104:7003@17003 slave bbeb14b902c9ec504ebad5940df9957b25d87092 0 1528275082410 4 connected
+bbeb14b902c9ec504ebad5940df9957b25d87092 10.168.80.103:7002@17002 master - 0 1528275081408 3 connected 10923-16383
+9d045197be1d6a431c38f4369ce16a69d197842f 10.168.80.106:7005@17005 slave 472363a3cf79a3c955d534e6e042f0c81349d2b5 0 1528275083000 6 connected
+10.168.80.101:7000> 
+ ```
+### HAProxy as redis-cluster proxy
+
+- Lets put our HAProxy in front of the redis cluster listening on 127.0.0.1:6379 si the cluster will be transparent for our clients and HAProxy will check the master status using 'option' checks. 
+
+### Modifiy haproxy.cfg
+
+- Go to haproxy-mqtt folder, edit **haproxy.cfg** and add this to the end of file: 
+
+```
+listen redis-cluster
+    bind *:6379
+    mode tcp
+    timeout connect  4s
+    timeout server  30s
+    timeout client  30s
+    #option clitcpka
+    option tcplog
+    option tcp-check
+    tcp-check send PING\r\n
+    tcp-check expect string +PONG
+    tcp-check send info\ replication\r\n
+    tcp-check expect string role:master
+    tcp-check send QUIT\r\n
+    tcp-check expect string +OK
+    #balance leastconn
+    server redis_master1 10.168.80.101:7000 maxconn 2048 check inter 1s
+    server redis_master2 10.168.80.102:7001 maxconn 2048 check inter 1s
+    server redis_master3 10.168.80.103:7002 maxconn 2048 check inter 1s
+    server redis_slave1 10.168.80.104:7003 maxconn 2048 check inter 1s
+    server redis_slave2 10.168.80.105:7004 maxconn 2048 check inter 1s
+    server redis_slave3 10.168.80.106:7005 maxconn 2048 check inter 1s
+```
+
+- Then save it and edit the Dockerfile to EXPOSE the Redis port. The EXPOSE section of your Dockerfile should look like this.
+
+```
+. . . 
+
+# Expose ports.
+EXPOSE 80
+EXPOSE 443
+EXPOSE 1883
+EXPOSE 6379
+EXPOSE 18083
+. . . 
+```
+
+- Build new haproxy image: 
+
+```
+docker build -t haproxy-mqtt:1.7-rediscl .
+```
+
+- And then stop current HAProxy and deploy new version: 
+
+```
+docker stop haproxy01
+docker rm haproxy01
+docker run -it -d --net mqtt -p80:80 -p1883:1883 -p18083:18083 -p6379:6379 --name haproxy01 haproxy-mqtt:1.7-rediscl
+```
+
+- Now we will be able to see the new backend and its state in the haproxy stats. Go to your website http://IP_OFYOR_VM and check the state of the redis-cluster backend. 
+
+- You should see, 3 redis-master in green and 3 redis-slaves in red. Thats normal dont panic. 
+
+- In our haproxy we specified that HAProxy must talk only to backends with the role:master string so the red ones are OK, they are replicas. All works as expected. 
+
+- If you want to test i suggest the following: 
+
+```
+docker stop rediscluster_redismaster1_1
+```
+- See if one of the slaves turns green, it should!
+
+- Then check logs of the new promoted master: 
+
+```
+docker logs rediscluster_redislave3_1 -f --tail 1m
+```
+
+- See something like that?
+
+```
+1:S 06 Jun 09:41:57.570 # Connection with master lost.
+1:S 06 Jun 09:41:57.570 * Caching the disconnected master state.
+1:S 06 Jun 09:41:58.343 * Connecting to MASTER 10.168.80.102:7001
+1:S 06 Jun 09:41:58.343 * MASTER <-> SLAVE sync started
+1:S 06 Jun 09:42:03.340 * Marking node 472363a3cf79a3c955d534e6e042f0c81349d2b5 as failing (quorum reached).
+1:S 06 Jun 09:42:03.340 # Cluster state changed: fail
+1:S 06 Jun 09:42:03.357 # Start of election delayed for 787 milliseconds (rank #0, offset 11816).
+1:S 06 Jun 09:42:04.158 # Starting a failover election for epoch 9.
+1:S 06 Jun 09:42:13.374 # Currently unable to failover: Waiting for votes, but majority still not reached.
+1:S 06 Jun 09:42:14.176 # Currently unable to failover: Failover attempt expired.
+1:S 06 Jun 09:42:24.195 # Start of election delayed for 988 milliseconds (rank #0, offset 11816).
+1:S 06 Jun 09:42:24.295 # Currently unable to failover: Waiting the delay before I can start a new failover.
+1:S 06 Jun 09:42:25.196 # Starting a failover election for epoch 10.
+1:S 06 Jun 09:42:25.410 # Currently unable to failover: Waiting for votes, but majority still not reached.
+1:S 06 Jun 09:42:25.480 # Failover election won: I'm the new master.
+1:S 06 Jun 09:42:25.480 # configEpoch set to 10 after successful failover
+1:M 06 Jun 09:42:25.480 # Setting secondary replication ID to c092dcc8c3ad5c8a30ceeb6981a0fab336c6f11b, valid up to offset: 11817. New replication ID is dbd9be3bd5390b5e002905fae4ccea42c112926a
+1:M 06 Jun 09:42:25.480 * Discarding previously cached master state.
+1:M 06 Jun 09:42:25.480 # Cluster state changed: o
+
+```
+
+- And the logs of an existing master should look like: 
+
+```
+1:M 06 Jun 09:42:04.257 # Failover auth denied to 9d045197be1d6a431c38f4369ce16a69d197842f: its master is up
+1:M 06 Jun 09:42:04.355 * Marking node 472363a3cf79a3c955d534e6e042f0c81349d2b5 as failing (quorum reached).
+1:M 06 Jun 09:42:04.355 # Cluster state changed: fail
+1:M 06 Jun 09:42:25.410 # Failover auth granted to 9d045197be1d6a431c38f4369ce16a69d197842f for epoch 10
+1:M 06 Jun 09:42:25.482 # Cluster state changed: ok
+
+```
+
+- All is working like a charm. 
+
+- Now, revert to its original state:
+
+ - Start the previous master. 
+ - Stop the promoted replica and then the old master will catch the master role. 
+ - Confirm that the 3 master are green and replicas appear red in the HAProxy Stats panel. 
+ 
+- Get a coffee! :)
+
+
+
+
 
 
 
