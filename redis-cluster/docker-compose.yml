@@ -4,62 +4,74 @@ services:
     image: redis:4.0.9
     ports:
       - "7000:7000"
+      - "17000:17000"
     volumes:
       - ./docker-data/redis-cluster1.tmpl:/usr/local/etc/redis/redis.conf
     command: redis-server /usr/local/etc/redis/redis.conf
     networks:
       mqtt:
-        ipv4_address: 10.168.80.101
+#        ipv4_address: 10.168.81.101
+    restart: unless-stopped
   redismaster2:
     image: redis:4.0.9
     ports:
       - "7001:7001"
+      - "17001:17001"
     volumes:
       - ./docker-data/redis-cluster2.tmpl:/usr/local/etc/redis/redis.conf
     command: redis-server /usr/local/etc/redis/redis.conf
     networks:
       mqtt:
-        ipv4_address: 10.168.80.102
+#        ipv4_address: 10.168.81.102
+    restart: unless-stopped
   redismaster3:
     image: redis:4.0.9
     ports:
       - "7002:7002"
+      - "17002:17002"
     volumes:
       - ./docker-data/redis-cluster3.tmpl:/usr/local/etc/redis/redis.conf
     command: redis-server /usr/local/etc/redis/redis.conf
     networks:
       mqtt:
-        ipv4_address: 10.168.80.103
+#        ipv4_address: 10.168.81.103
+    restart: unless-stopped
   redislave1:
     image: redis:4.0.9
     ports:
       - "7003:7003"
+      - "17003:17003"
     volumes:
       - ./docker-data/redis-cluster4.tmpl:/usr/local/etc/redis/redis.conf
     command: redis-server /usr/local/etc/redis/redis.conf
     networks:
       mqtt:
-        ipv4_address: 10.168.80.104
+#        ipv4_address: 10.168.81.104
+    restart: unless-stopped
   redislave2:
     image: redis:4.0.9
     ports:
       - "7004:7004"
+      - "17004:17004"
     volumes:
       - ./docker-data/redis-cluster5.tmpl:/usr/local/etc/redis/redis.conf
     command: redis-server /usr/local/etc/redis/redis.conf
     networks:
       mqtt:
-        ipv4_address: 10.168.80.105
+#        ipv4_address: 10.168.81.105
+    restart: unless-stopped
   redislave3:
     image: redis:4.0.9
     ports:
       - "7005:7005"
+      - "17005:17005"
     volumes:
       - ./docker-data/redis-cluster6.tmpl:/usr/local/etc/redis/redis.conf
     command: redis-server /usr/local/etc/redis/redis.conf
     networks:
       mqtt:
-        ipv4_address: 10.168.80.106
+#        ipv4_address: 10.168.81.106
+    restart: unless-stopped
   redis-cluster:
     tty: true
     build:
@@ -76,7 +88,7 @@ services:
       - redislave3
     networks:
       mqtt:
-        ipv4_address: 10.168.80.100
+#        ipv4_address: 10.168.81.100
 networks:
   mqtt:
     external:
